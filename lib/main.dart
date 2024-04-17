@@ -21,7 +21,7 @@ class BlogsScreen extends StatelessWidget {
         future: service.fetchBlogs(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error.toString()}'));
           }
@@ -35,7 +35,7 @@ class BlogsScreen extends StatelessWidget {
                 child: ListTile(
                   leading: blog['featured_image'] != null && blog['featured_image'].isNotEmpty
                       ? Image.network(blog['featured_image'], width: 100, height: 100)
-                      : SizedBox(width: 100, height: 100), // Placeholder in case of no image
+                      : const SizedBox(width: 100, height: 100), // Placeholder in case of no image
                   title: Text(blog['title']),
                   subtitle: Text(blog['short_content']),
                   trailing: Text(blog['creation_time']),

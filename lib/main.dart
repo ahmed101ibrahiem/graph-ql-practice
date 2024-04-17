@@ -3,25 +3,25 @@ import 'package:graphql/client.dart';
 import 'package:http/http.dart' as http;
 
 void main() {
-  final client = initClient();
-  final service = GraphQLService(client);
-  runApp(MaterialApp(home: BlogsScreen(service: service)));
+  final graphQLService = GraphQLService();
+  graphQLService.init();
+  runApp(MaterialApp(home: BlogsScreen(graphQLService: graphQLService)));
 }
 
 class BlogsScreen extends StatelessWidget {
-  final GraphQLService service;
+  final GraphQLService graphQLService;
 
-  BlogsScreen({required this.service});
+  const BlogsScreen({super.key, required this.graphQLService});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Blogs')),
+      appBar: AppBar(title: const Text('Blogs')),
       body: FutureBuilder<List<dynamic>>(
-        future: service.fetchBlogs(),
+        future: graphQLService.fetchBlogs(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error.toString()}'));
           }
@@ -48,10 +48,21 @@ class BlogsScreen extends StatelessWidget {
     );
   }
 }
-class GraphQLService {
-  final GraphQLClient client;
 
-  GraphQLService(this.client);
+class GraphQLService {
+  late GraphQLClient client;
+
+  void init() {
+    final HttpLink httpLink = HttpLink(
+      'https://backend.almasrypharmacy.com/graphql',
+      httpClient: http.Client(),
+    );
+
+    client = GraphQLClient(
+      link: httpLink,
+      cache: GraphQLCache(),
+    );
+  }
 
   Future<List<dynamic>> fetchBlogs() async {
     const String query = r'''
@@ -79,18 +90,4 @@ class GraphQLService {
 
     return result.data?['blogPosts']['items'] as List<dynamic>;
   }
-}
-
-
-// Initialize and provide a GraphQL client
-GraphQLClient initClient() {
-  final HttpLink httpLink = HttpLink(
-    'https://backend.almasrypharmacy.com/graphql',
-    httpClient: http.Client(),
-  );
-
-  return GraphQLClient(
-    link: httpLink,
-    cache: GraphQLCache(),
-  );
 }

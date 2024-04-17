@@ -17,7 +17,7 @@ class BlogsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Blogs')),
-      body: FutureBuilder<List<dynamic>>(
+      body: FutureBuilder<List<BlogResponseModel>>(
         future: graphQLService.fetchBlogs(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -26,19 +26,19 @@ class BlogsScreen extends StatelessWidget {
             return Center(child: Text('Error: ${snapshot.error.toString()}'));
           }
 
-          final blogs = snapshot.data ?? [];
+          final List<BlogResponseModel> blogs = snapshot.data ?? [];
           return ListView.builder(
             itemCount: blogs.length,
             itemBuilder: (context, index) {
-              final blog = blogs[index];
+              final BlogResponseModel blog = blogs[index];
               return Card(
                 child: ListTile(
-                  leading: blog['featured_image'] != null && blog['featured_image'].isNotEmpty
-                      ? Image.network(blog['featured_image'], width: 100, height: 100)
+                  leading: blog.featuredImage != null && blog.featuredImage!.isNotEmpty
+                      ? Image.network(blog.featuredImage!, width: 100, height: 100)
                       : const SizedBox(width: 100, height: 100), // Placeholder in case of no image
-                  title: Text(blog['title']),
-                  subtitle: Text(blog['short_content']),
-                  trailing: Text(blog['creation_time']),
+                  title: Text(blog.title),
+                  subtitle: Text(blog.shortContent),
+                  trailing: Text(blog.creationTime),
                 ),
               );
             },
@@ -64,7 +64,7 @@ class GraphQLService {
     );
   }
 
-  Future<List<dynamic>> fetchBlogs() async {
+  Future<List<BlogResponseModel>> fetchBlogs() async {
     const String query = r'''
     query GetBlogData {
       blogPosts {
@@ -88,6 +88,31 @@ class GraphQLService {
       throw Exception(result.exception.toString());
     }
 
-    return result.data?['blogPosts']['items'] as List<dynamic>;
+    final List<dynamic> blogItems = result.data?['blogPosts']['items'] ?? [];
+    return blogItems.map((json) => BlogResponseModel.fromJson(json)).toList();
+  }
+}
+
+
+class BlogResponseModel {
+  final String creationTime;
+  final String? featuredImage;
+  final String title;
+  final String shortContent;
+
+  BlogResponseModel({
+    required this.creationTime,
+    required this.title,
+    required this.shortContent,
+    this.featuredImage,
+  });
+
+  factory BlogResponseModel.fromJson(Map<String, dynamic> json) {
+    return BlogResponseModel(
+      creationTime: json['creation_time'],
+      title: json['title'],
+      shortContent: json['short_content'],
+      featuredImage: json['featured_image'],
+    );
   }
 }
